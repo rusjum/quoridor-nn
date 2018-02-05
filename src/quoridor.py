@@ -54,8 +54,8 @@ class QuoridorGame:
             self.remove_edge(from_nodes[0], to_nodes[1])
             self.dominoes[player] -= 1
 
-    def get_game_state(self):
-        return np.concatenate((np.copy(self.positions), np.copy(self.dominoes), np.copy(self.board).reshape(self.cols * self.rows)))
+    def get_game_state(self, player):
+        return np.concatenate((np.full(1, player), np.copy(self.positions), np.copy(self.dominoes), np.copy(self.board).reshape(self.cols * self.rows)))
 
     def find_nodes(self, location):
         if location < (self.rows - 1) * (self.cols - 1):

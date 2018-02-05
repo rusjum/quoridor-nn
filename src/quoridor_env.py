@@ -11,7 +11,7 @@ class QuoridorEnv(gym.Env):
     def __init__(self, player=0):
         self.game = quoridor.QuoridorGame(NUMBER_OF_PLAYERS, ROWS, COLS)
         self.action_space = spaces.Discrete(self.game.num_of_possible_moves())
-        self.observation_space = spaces.Discrete(ROWS * COLS + NUMBER_OF_PLAYERS * 2)
+        self.observation_space = spaces.Discrete(ROWS * COLS + NUMBER_OF_PLAYERS * 2 + 1)
         self.player = player
         self.reward_range = [0, 1]
         self.metadata['render.modes'] = ['ansi']
@@ -23,12 +23,14 @@ class QuoridorEnv(gym.Env):
         #     info
 
         self.game.do_move(action, self.player)
+        reward = self._calculate_reward()
         self.player = (self.player + 1) % NUMBER_OF_PLAYERS
-        return self.game.get_game_state(), self._calculate_reward(), self.game.is_finished()[0], 'Action: {}'.format(action)
+        return self.game.get_game_state(self.player), reward, self.game.is_finished()[0], 'Action: {}'.format(action)
 
     def _reset(self):
         self.game = quoridor.QuoridorGame(NUMBER_OF_PLAYERS, ROWS, COLS)
-        return self.game.get_game_state()
+        self.player = player = 0
+        return self.game.get_game_state(self.player)
 
     def _isDone(self):
         return self.game.is_finished()
