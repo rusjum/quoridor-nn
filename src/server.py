@@ -62,8 +62,8 @@ class D2Solver():
         self.model.compile(loss='mse', optimizer=Adam(lr=self.alpha, decay=self.alpha_decay))
         self.second_model = None
         import os.path
-        if os.path.isfile('models/episode_100.bin'):
-            self.second_model = load_model('models/episode_100.bin')
+        if os.path.isfile('models/episode_latest.bin'):
+            self.second_model = load_model('models/episode_latest.bin')
 
         #plot_model(self.model, to_file='models/last_episode.png')
         self.dump_model(0)
@@ -112,39 +112,42 @@ class D2Solver():
 
     def run(self):
         scores = deque(maxlen=100)
-        for e in range(self.n_episodes):
-            state = self.preprocess_state(self.env.reset())
-            done = False
-            totalReward = 0
-            while not done:
-                action = self.choose_action(state, self.get_epsilon(e))
-                next_state, reward, done, _ = self.env.step(action)
-                if done:
-                    print(self.env.render(mode='ansi'))
-                next_state = self.preprocess_state(next_state)
-                self.remember(state, action, reward, next_state, done)
-                if reward > 0:
-                    self.positive_memory.append((state, action, reward, next_state, done))
-                next_state, _, done, _ = self.env.step(self.choose_op_action(state))
-                next_state = self.preprocess_state(next_state)
-                state = next_state
-                totalReward += reward
+        episodes = range(5, 1000, 5)
+        for num_of_episodes in episodes:
+            for e in range(num_of_episodes):
+                state = self.preprocess_state(self.env.reset())
+                done = False
+                totalReward = 0
+                while not done:
+                    action = self.choose_action(state, self.get_epsilon(e))
+                    next_state, reward, done, _ = self.env.step(action)
+                    if done:
+                        print(self.env.render(mode='ansi'))
+                    next_state = self.preprocess_state(next_state)
+                    self.remember(state, action, reward, next_state, done)
+                    if reward > 0:
+                        self.positive_memory.append((state, action, reward, next_state, done))
+                    next_state, _, done, _ = self.env.step(self.choose_op_action(state))
+                    next_state = self.preprocess_state(next_state)
+                    state = next_state
+                    totalReward += reward
 
-            scores.append(totalReward)
-            mean_score = np.mean(scores)
-            if mean_score >= self.n_win_ticks and e >= 100:
-                if not self.quiet: print('Ran {} episodes. Solved after {} trials ?'.format(e, e - 100))
-                return e - 100
-            #if e % 100 == 0 and not self.quiet:
-            print('[Episode {}] - Score {} Mean score for last 100 {} Positive memories {}/{}'.format(e, totalReward, mean_score, len(self.positive_memory), len(self.memory)))
+                scores.append(totalReward)
+                mean_score = np.mean(scores)
+                if mean_score >= self.n_win_ticks and e >= 100:
+                    if not self.quiet: print('Ran {} episodes. Solved after {} trials ?'.format(e, e - 100))
+                    return e - 100
+                #if e % 100 == 0 and not self.quiet:
+                print('[Episode {}] - Score {} Mean score for last 100 {} Positive memories {}/{}'.format(e, totalReward, mean_score, len(self.positive_memory), len(self.memory)))
 
-            for i in range(self.minibatches_per_episode):
-                self.replay(self.batch_size)
-            if self.epsilon > self.epsilon_min:
-                self.epsilon *= self.epsilon_decay
-            #plot_model(self.model, to_file='models/episode_' + str(e) + '.png')
-            #plot_model(self.model, to_file='models/last_episode.png')
-            self.dump_model(e)
+                for i in range(self.minibatches_per_episode):
+                    self.replay(self.batch_size)
+                if self.epsilon > self.epsilon_min:
+                    self.epsilon *= self.epsilon_decay
+                #plot_model(self.model, to_file='models/episode_' + str(e) + '.png')
+                #plot_model(self.model, to_file='models/last_episode.png')
+                self.dump_model(e)
+            self.dump_model('latest')
 
         if not self.quiet: print('Did not solve after {} episodes ?'.format(e))
         return e
