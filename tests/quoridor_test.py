@@ -5,7 +5,7 @@ import quoridor
 def test_should_return_init_game_state():
     positions = np.array([0, 1])
     dominoes = np.array([5, 5])
-    board = np.full(4, 7)
+    board = np.full(4, quoridor.ALL_FREE)
     expected = np.concatenate((np.zeros(1), positions, dominoes, board))
 
     game = quoridor.QuoridorGame(2, 2, 2)
@@ -44,20 +44,20 @@ def test_should_not_change_player_position_if_no_connection():
 def test_should_not_change_player_position_if_wrong_direction():
     positions = np.array([3, 5])
     dominos = np.array([5, 5])
-    board = np.full(9, 7)
+    board = np.full(9, quoridor.ALL_FREE)
     expected = np.concatenate((np.zeros(1), positions, dominos, board))
     game = quoridor.QuoridorGame(2, 3, 3)
-    game.do_move(3, 0)
+    game.do_move(quoridor.MOVE_UP, 0)
     assert np.array_equal(game.get_game_state(0), expected)
 
 
 def test_should_change_player_position_if_it_is_possible():
-    positions = np.array([6, 5])
+    positions = np.array([4, 5])
     dominos = np.array([5, 5])
-    board = np.full(9, 7)
+    board = np.full(9, quoridor.ALL_FREE)
     expected = np.concatenate((np.zeros(1), positions, dominos, board))
     game = quoridor.QuoridorGame(2, 3, 3)
-    game.do_move(2, 0)
+    game.do_move(quoridor.MOVE_DOWN, 0)
     assert np.array_equal(game.get_game_state(0), expected)
 
 
@@ -117,8 +117,61 @@ def test_should_not_put_if_vertical_blocked():
 def test_game_finish():
     positions = np.array([0, 1, 0, 0])
     dominoes = np.array([5, 5, 5, 5])
-    board = np.full(4, 7)
+    board = np.full(4, quoridor.ALL_FREE)
     game_state = np.concatenate((positions, dominoes, board))
     game = quoridor.QuoridorGame(4, 2, 2)
     game.init_from_state(game_state)
     assert game.is_finished()[0]
+
+#
+#
+# .|. .
+#
+# .|. .
+#   -
+# . . .
+#
+def test_shortest_path():
+    positions = np.array([0, 1])
+    dominoes = np.array([5, 5])
+    board = np.full(9, quoridor.ALL_FREE)
+    game_state = np.concatenate((positions, dominoes, board))
+    game = quoridor.QuoridorGame(2, 3, 3)
+    game.init_from_state(game_state)
+    game.remove_edge((0, 0), (1, 0))
+    game.remove_edge((0, 1), (1, 1))
+    game.remove_edge((1, 1), (1, 2))
+    assert game.shortest_path(0, 0, 0, 0) == 0
+    assert game.shortest_path(0, 0, 2, 0) == 6
+    assert game.shortest_path(0, 0, 1, 0) == 7
+    assert game.shortest_path(0, 0, 1, 1) == 6
+    assert game.shortest_path(0, 1, 1, 1) == 5
+
+
+#
+# . . .
+#
+# . . .
+# - - -
+# . . .
+#
+def test_game_finish_if_all_locked():
+    game = quoridor.QuoridorGame(2, 3, 3)
+    game.remove_edge((0, 1), (0, 2))
+    game.remove_edge((1, 1), (1, 2))
+    game.remove_edge((2, 1), (2, 2))
+    assert game.is_finished()[0]
+
+#
+# . . .
+#
+# . . .
+# - -
+# . . .
+#
+def test_game_not_finished_if_not_all_locked():
+    game = quoridor.QuoridorGame(2, 3, 3)
+    game.remove_edge((0, 1), (0, 2))
+    game.remove_edge((1, 1), (1, 2))
+    print(game.render())
+    assert not game.is_finished()[0]

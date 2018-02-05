@@ -13,8 +13,8 @@ from keras.layers import Dense
 from keras.optimizers import Adam
 from keras.utils import plot_model
 
-GPU = False
-CPU = True
+GPU = True
+CPU = False
 num_cores = 4
 
 if GPU:
@@ -75,10 +75,10 @@ class D2Solver():
     def choose_action(self, state, epsilon):
         return self.env.action_space.sample() if (np.random.random() <= epsilon) else np.argmax(self.model.predict(state))
 
-    def choose_op_action(self, state):
+    def choose_op_action(self, state, epsilon):
         if self.second_model is not None:
-            return np.argmax(self.second_model.predict(state))
-        return 0
+            return self.env.action_space.sample() if (np.random.random() <= epsilon) else np.argmax(self.second_model.predict(state))
+        return self.env.action_space.sample()
 
 
     def get_epsilon(self, t):
@@ -120,16 +120,16 @@ class D2Solver():
                 done = False
                 totalReward = 0
                 turns = 0
-                while not done and turns < 100000:
+                while not done and turns < 1000:
                     action = self.choose_action(state, self.get_epsilon(e))
                     next_state, reward, done, _ = self.env.step(action)
-                    if done:
-                        print(self.env.render(mode='ansi'))
+                    #if done:
+                    print(self.env.render(mode='ansi'))
                     next_state = self.preprocess_state(next_state)
                     self.remember(state, action, reward, next_state, done)
                     if reward > 0:
                         self.positive_memory.append((state, action, reward, next_state, done))
-                    next_state, _, done, _ = self.env.step(self.choose_op_action(next_state))
+                    next_state, _, done, _ = self.env.step(self.choose_op_action(next_state, self.get_epsilon(e)))
                     next_state = self.preprocess_state(next_state)
                     state = next_state
                     totalReward += reward

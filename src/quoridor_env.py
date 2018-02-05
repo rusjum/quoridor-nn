@@ -46,8 +46,11 @@ class QuoridorEnv(gym.Env):
 
     def _calculate_reward(self):
         finished = self.game.is_finished()
-        if finished[0] and finished[1] == self.player:
-            return 1
+        if finished[0]:
+            if finished[1] == self.player:
+                return 1
+            # max for -1 if there is no path
+            return max(0, (max(self.game.sx, self.game.sy) - self.game.shortest_path_for_player_to_win(self.player)) * 0.1)
         return 0
 
 gym.envs.register(
