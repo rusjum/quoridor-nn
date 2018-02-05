@@ -34,7 +34,7 @@ class QuoridorGame:
             self.do_step(player, move)
         else:
             if self.dominoes[player] > 0:
-                self.add_border(move - 3, player)
+                self.add_border(move - 4, player)
 
         return np.concatenate((np.copy(self.positions), np.copy(self.dominoes),
                                np.reshape(np.copy(self.board), self.rows * self.cols)))
@@ -60,18 +60,16 @@ class QuoridorGame:
 
     def find_nodes(self, location):
         if location < (self.rows - 1) * (self.cols - 1):
-            coordinates = self.to_coordinates(location)
-            if coordinates[1] == self.cols - 1:
-                location += 1
-            return (self.to_coordinates(location), self.to_coordinates(location + 1)), \
-                   (self.to_coordinates(location + self.cols), self.to_coordinates(location + self.cols + 1))
+            row = location // (self.cols - 1)
+            col = location % (self.cols - 1)
+            return ((row, col), (row, col + 1)), \
+                   ((row + 1, col), (row + 1, col + 1))
         else:
             location -= (self.rows - 1) * (self.cols - 1)
-            coordinates = self.to_coordinates(location)
-            if coordinates[0] == self.rows - 1:
-                location = self.to_position(0, coordinates[1] + 1)
-            return (self.to_coordinates(location), self.to_coordinates(location + self.cols)), \
-                   (self.to_coordinates(location + 1), self.to_coordinates(location + self.cols + 1))
+            row = location // (self.rows - 1)
+            col = location % (self.rows - 1)
+            return ((row, col), (row + 1, col)), \
+                   ((row, col + 1), (row + 1, col + 1))
 
     def is_finished(self):
         coordinates = self.to_coordinates(self.positions[0])

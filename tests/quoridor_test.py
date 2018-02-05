@@ -26,7 +26,7 @@ def test_should_return_init_from_game_state():
 
 def test_should_calculate_correct_number_of_moves():
     game = quoridor.QuoridorGame(2, 3, 3)
-    assert game.num_of_possible_moves() == 16
+    assert game.num_of_possible_moves() == 12
 
 
 def test_should_not_change_player_position_if_no_connection():
