@@ -60,13 +60,14 @@ class D2Solver():
         self.model.add(Dense(self.env.observation_space.n, activation='softmax'))
         self.model.add(Dense(self.env.action_space.n, activation='linear'))
         self.model.compile(loss='mse', optimizer=Adam(lr=self.alpha, decay=self.alpha_decay))
+        self.init_second()#plot_model(self.model, to_file='models/last_episode.png')
+        self.dump_model(0)
+
+    def init_second(self):
         self.second_model = None
         import os.path
         if os.path.isfile('models/episode_latest.bin'):
             self.second_model = load_model('models/episode_latest.bin')
-
-        #plot_model(self.model, to_file='models/last_episode.png')
-        self.dump_model(0)
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
@@ -148,7 +149,7 @@ class D2Solver():
                 #plot_model(self.model, to_file='models/last_episode.png')
                 self.dump_model(e)
             self.dump_model('latest')
-
+            self.init_second()
         if not self.quiet: print('Did not solve after {} episodes ?'.format(e))
         return e
 
