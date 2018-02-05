@@ -98,7 +98,6 @@ class D2Solver():
 
     def run(self):
         scores = deque(maxlen=100)
-
         for e in range(self.n_episodes):
             state = self.preprocess_state(self.env.reset())
             done = False
