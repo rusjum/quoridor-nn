@@ -128,7 +128,7 @@ class D2Solver():
                     self.remember(state, action, reward, next_state, done)
                     if reward > 0:
                         self.positive_memory.append((state, action, reward, next_state, done))
-                    next_state, _, done, _ = self.env.step(self.choose_op_action(state))
+                    next_state, _, done, _ = self.env.step(self.choose_op_action(next_state))
                     next_state = self.preprocess_state(next_state)
                     state = next_state
                     totalReward += reward
