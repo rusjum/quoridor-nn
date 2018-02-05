@@ -23,6 +23,7 @@ class QuoridorEnv(gym.Env):
         #     info
 
         self.game.do_move(action, self.player)
+        self.player = (self.player + 1) % NUMBER_OF_PLAYERS
         return self.game.get_game_state(), self._calculate_reward(), self.game.is_finished()[0], 'Action: {}'.format(action)
 
     def _reset(self):
