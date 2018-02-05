@@ -1,6 +1,17 @@
+from keras import models
+
 import quoridor_env
 import tensorflow as tf
 from keras import backend as K
+import random
+import gym
+import math
+import numpy as np
+from collections import deque
+from keras.models import Sequential, load_model
+from keras.layers import Dense
+from keras.optimizers import Adam
+from keras.utils import plot_model
 
 GPU = False
 CPU = True
@@ -19,18 +30,10 @@ config = tf.ConfigProto(intra_op_parallelism_threads=num_cores, \
 session = tf.Session(config=config)
 K.set_session(session)
 
-import random
-import gym
-import math
-import numpy as np
-from collections import deque
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.optimizers import Adam
-from keras.utils import plot_model
+
 
 class D2Solver():
-    def __init__(self, n_episodes=1000, n_win_ticks=195, max_env_steps=None, gamma=1.0, epsilon=1.0, epsilon_min=0.01, epsilon_log_decay=0.995, alpha=0.01, alpha_decay=0.01, batch_size=4096, minibatches_per_episode=5, monitor=False, quiet=False):
+    def __init__(self, n_episodes=101, n_win_ticks=195, max_env_steps=None, gamma=1.0, epsilon=1.0, epsilon_min=0.01, epsilon_log_decay=0.995, alpha=0.01, alpha_decay=0.01, batch_size=4096, minibatches_per_episode=5, monitor=False, quiet=False):
         self.memory = deque(maxlen=1000000)
         self.positive_memory = deque(maxlen=1000000)
         self.positive_batch_injection = 10
@@ -57,6 +60,11 @@ class D2Solver():
         self.model.add(Dense(self.env.observation_space.n, activation='softmax'))
         self.model.add(Dense(self.env.action_space.n, activation='linear'))
         self.model.compile(loss='mse', optimizer=Adam(lr=self.alpha, decay=self.alpha_decay))
+        self.second_model = None
+        import os.path
+        if os.path.isfile('models/episode_100.bin'):
+            self.second_model = load_model('models/episode_100.bin')
+
         #plot_model(self.model, to_file='models/last_episode.png')
         self.dump_model(0)
 
@@ -65,6 +73,12 @@ class D2Solver():
 
     def choose_action(self, state, epsilon):
         return self.env.action_space.sample() if (np.random.random() <= epsilon) else np.argmax(self.model.predict(state))
+
+    def choose_op_action(self, state):
+        if self.second_model is not None:
+            return np.argmax(self.second_model.predict(state))
+        return 0
+
 
     def get_epsilon(self, t):
         return max(self.epsilon_min, min(self.epsilon, 1.0 - math.log10((t + 1) * self.epsilon_decay)))
@@ -111,6 +125,8 @@ class D2Solver():
                 self.remember(state, action, reward, next_state, done)
                 if reward > 0:
                     self.positive_memory.append((state, action, reward, next_state, done))
+                next_state, _, done, _ = self.env.step(self.choose_op_action(state))
+                next_state = self.preprocess_state(next_state)
                 state = next_state
                 totalReward += reward
 
@@ -132,6 +148,7 @@ class D2Solver():
 
         if not self.quiet: print('Did not solve after {} episodes ?'.format(e))
         return e
+
 
 if __name__ == '__main__':
     agent = D2Solver()
