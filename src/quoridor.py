@@ -34,7 +34,7 @@ class QuoridorGame:
             self.do_step(player, move)
         else:
             if self.dominoes[player] > 0:
-                self.add_border(move - 4, player)
+                self.add_border(move - 3, player)
 
         return np.concatenate((np.copy(self.positions), np.copy(self.dominoes),
                                np.reshape(np.copy(self.board), self.rows * self.cols)))
@@ -60,10 +60,16 @@ class QuoridorGame:
 
     def find_nodes(self, location):
         if location < (self.rows - 1) * (self.cols - 1):
+            coordinates = self.to_coordinates(location)
+            if coordinates[1] == self.cols - 1:
+                location += 1
             return (self.to_coordinates(location), self.to_coordinates(location + 1)), \
                    (self.to_coordinates(location + self.cols), self.to_coordinates(location + self.cols + 1))
         else:
             location -= (self.rows - 1) * (self.cols - 1)
+            coordinates = self.to_coordinates(location)
+            if coordinates[0] == self.rows - 1:
+                location = self.to_position(0, coordinates[1] + 1)
             return (self.to_coordinates(location), self.to_coordinates(location + self.cols)), \
                    (self.to_coordinates(location + 1), self.to_coordinates(location + self.cols + 1))
 
@@ -136,7 +142,7 @@ class QuoridorGame:
         return 0 <= col < self.cols and 0 <= row < self.rows
 
     def num_of_possible_moves(self):
-        return self.num_of_players * 4 + (self.rows - 1) * (self.cols - 1) * 2
+        return 4 + (self.rows - 1) * (self.cols - 1) * 2
 
     @staticmethod
     def calculate_new_position(row, col, move):
