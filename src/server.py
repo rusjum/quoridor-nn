@@ -119,7 +119,8 @@ class D2Solver():
                 state = self.preprocess_state(self.env.reset())
                 done = False
                 totalReward = 0
-                while not done:
+                turns = 0
+                while not done and turns < 100000:
                     action = self.choose_action(state, self.get_epsilon(e))
                     next_state, reward, done, _ = self.env.step(action)
                     if done:
@@ -132,6 +133,7 @@ class D2Solver():
                     next_state = self.preprocess_state(next_state)
                     state = next_state
                     totalReward += reward
+                    turns += 1
 
                 scores.append(totalReward)
                 mean_score = np.mean(scores)
