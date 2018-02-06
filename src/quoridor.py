@@ -46,8 +46,7 @@ class QuoridorGame:
             if self.dominoes[player] > 0:
                 self.add_border(move - 4, player)
 
-        return np.concatenate((np.copy(self.positions), np.copy(self.dominoes),
-                               np.reshape(np.copy(self.board), self.sx * self.sy)))
+        return np.concatenate((self.positions, self.dominoes, np.reshape(self.board, self.sx * self.sy)))
 
     def do_step(self, player, move):
         player_x, player_y = self.to_coordinates(self.positions[player])

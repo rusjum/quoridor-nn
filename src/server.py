@@ -13,8 +13,8 @@ from keras.layers import Dense
 from keras.optimizers import Adam
 from keras.utils import plot_model
 
-GPU = True
-CPU = False
+GPU = False
+CPU = True
 num_cores = 4
 
 if GPU:
@@ -65,9 +65,9 @@ class D2Solver():
 
     def init_second(self):
         self.second_model = None
-        import os.path
-        if os.path.isfile('models/episode_latest.bin'):
-            self.second_model = load_model('models/episode_latest.bin')
+        # import os.path
+        # if os.path.isfile('models/episode_latest.bin'):
+        #     self.second_model = load_model('models/episode_latest.bin')
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
@@ -82,7 +82,7 @@ class D2Solver():
 
 
     def get_epsilon(self, t):
-        return max(self.epsilon_min, min(self.epsilon, 1.0 - math.log10((t + 1) * self.epsilon_decay)))
+        return max(self.epsilon_min, self.epsilon)
 
     def preprocess_state(self, state):
         return np.reshape(state, [1, self.env.observation_space.n])
@@ -120,11 +120,11 @@ class D2Solver():
                 done = False
                 totalReward = 0
                 turns = 0
-                while not done and turns < 1000:
+                while not done and turns < 10000:
                     action = self.choose_action(state, self.get_epsilon(e))
                     next_state, reward, done, _ = self.env.step(action)
                     #if done:
-                    print(self.env.render(mode='ansi'))
+
                     next_state = self.preprocess_state(next_state)
                     self.remember(state, action, reward, next_state, done)
                     if reward > 0:
@@ -134,7 +134,10 @@ class D2Solver():
                     state = next_state
                     totalReward += reward
                     turns += 1
-
+                print(self.env.render(mode='ansi'))
+                print("Turns: {}".format(turns))
+                print("Player: {}".format(self.env.player + 1))
+                print("Epsilon: {}".format(self.get_epsilon(e)))
                 scores.append(totalReward)
                 mean_score = np.mean(scores)
                 if mean_score >= self.n_win_ticks and e >= 100:

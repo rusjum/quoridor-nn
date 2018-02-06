@@ -11,7 +11,7 @@ class QuoridorEnv(gym.Env):
     def __init__(self, player=0):
         self.init_player = player
         self.game = quoridor.QuoridorGame(NUMBER_OF_PLAYERS, ROWS, COLS)
-        self.action_space = spaces.Discrete(self.game.num_of_possible_moves())
+        self.action_space = spaces.Discrete(4)
         self.observation_space = spaces.Discrete(ROWS * COLS + NUMBER_OF_PLAYERS * 2 + 1)
         self.player = player
         self.reward_range = [0, 1]
