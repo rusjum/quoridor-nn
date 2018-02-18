@@ -33,7 +33,7 @@ K.set_session(session)
 
 
 class D2Solver():
-    def __init__(self, n_episodes=101, n_win_ticks=195, max_env_steps=None, gamma=1.0, epsilon=1.0, epsilon_min=0.01, epsilon_log_decay=0.995, alpha=0.01, alpha_decay=0.01, batch_size=4096, minibatches_per_episode=5, monitor=False, quiet=False):
+    def __init__(self, n_episodes=101, n_win_ticks=195, max_env_steps=None, gamma=1.0, epsilon=1.0, epsilon_min=0.01, epsilon_log_decay=0.995, alpha=0.01, alpha_decay=0.01, batch_size=200, minibatches_per_episode=5, monitor=False, quiet=False):
         self.memory = deque(maxlen=1000000)
         self.positive_memory = deque(maxlen=1000000)
         self.positive_batch_injection = 10
@@ -55,12 +55,11 @@ class D2Solver():
         # Init model
         self.model = Sequential()
         self.model.add(Dense(self.env.observation_space.n*2, input_dim=self.env.observation_space.n, activation='linear'))
-        self.model.add(Dense(self.env.observation_space.n, activation='linear'))
         self.model.add(Dense(self.env.observation_space.n, activation='tanh'))
-        self.model.add(Dense(self.env.observation_space.n, activation='softmax'))
         self.model.add(Dense(self.env.action_space.n, activation='linear'))
         self.model.compile(loss='mse', optimizer=Adam(lr=self.alpha, decay=self.alpha_decay))
-        self.init_second()#plot_model(self.model, to_file='models/last_episode.png')
+        # self.model = load_model('models/episode_272.bin')
+        self.init_second()
         self.dump_model(0)
 
     def init_second(self):
@@ -78,7 +77,7 @@ class D2Solver():
     def choose_op_action(self, state, epsilon):
         if self.second_model is not None:
             return self.env.action_space.sample() if (np.random.random() <= epsilon) else np.argmax(self.second_model.predict(state))
-        return self.env.action_space.sample()
+        return 1
 
 
     def get_epsilon(self, t):
@@ -115,16 +114,15 @@ class D2Solver():
         scores = deque(maxlen=100)
         episodes = range(5, 1000, 5)
         for num_of_episodes in episodes:
-            for e in range(num_of_episodes):
+            for e in range(1000):
                 state = self.preprocess_state(self.env.reset())
                 done = False
                 totalReward = 0
-                turns = 0
+                turns = 1
                 while not done and turns < 10000:
                     action = self.choose_action(state, self.get_epsilon(e))
                     next_state, reward, done, _ = self.env.step(action)
                     #if done:
-
                     next_state = self.preprocess_state(next_state)
                     self.remember(state, action, reward, next_state, done)
                     if reward > 0:
@@ -153,7 +151,8 @@ class D2Solver():
                 #plot_model(self.model, to_file='models/episode_' + str(e) + '.png')
                 #plot_model(self.model, to_file='models/last_episode.png')
                 self.dump_model(e)
-            self.dump_model('latest')
+                self.dump_model('latest')
+                # plot_model(self.model, to_file='models/{}_episode.png'.format(e), show_shapes=True)
             self.init_second()
         if not self.quiet: print('Did not solve after {} episodes ?'.format(e))
         return e
